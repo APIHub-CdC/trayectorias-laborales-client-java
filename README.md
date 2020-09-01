@@ -1,6 +1,6 @@
 # trayectorias-laborales-client-java
 
-Api para consulta de trayectorias Laborales (Empleos, Cedulas y Listas).
+API para consulta de Trayectorias Laborales (Empleos, Cedulas y Listas).
 
 ## Requisitos
 
@@ -138,44 +138,74 @@ key_password=your_super_secure_password
 ```
 ### Paso 5. Modificar URL y datos de petición
 
-En el archivo ApiTest.java, que se encuentra en ***src/test/java/io/tl/mx/client/api/***. Se deberá modificar los datos de la petición y de la URL para el consumo de la API en setBasePath("the_url"), como se muestra en el siguiente fragmento de código con los datos correspondientes:
+En el archivo ApiTest.java, que se encuentra en ***src/test/java/io/tl/mx/client/api/***. Por tanto, se deberá modificar la URL (**urlApi**); el usuario (**Username**) y contraseña (**Password**) de autenticación de acceso básica; y la API KEY (**xApiKey**), que se muestra en el siguiente fragmento de código:
+
 
 > **NOTA:** Los datos de la siguiente petición son solo representativos.
 
 ```java
 public class ApiTest {
-	
+    
 	private Logger logger = LoggerFactory.getLogger(ApiTest.class.getName());
-	private final LoanAmountEstimatorApi api = new LoanAmountEstimatorApi();
-	private String xApiKey = "your_api_key";
-	private String username = "your_username";
-	private String password = "your_password";	
-	
-	private ApiClient apiClient = null;
-
+	private final ConsultaApi api = new ConsultaApi();
+	private ApiClient apiClient = null;  
+	private static final String xApiKey = "your_api_key";
+	private static final String Authorization = "Authorization";
+	private static final String Username = "your-basic-auth-username";
+	private static final String Password = "your-basic-auth-password";
+	private static final String urlApi = "the_url";
+	    
 	@Before()
 	public void setUp() {
-		this.apiClient = api.getApiClient();
-		this.apiClient.setBasePath("the_url");
-		OkHttpClient okHttpClient = new OkHttpClient().newBuilder()
-			    .readTimeout(30, TimeUnit.SECONDS)
-			    .addInterceptor(new SignerInterceptor())
-			    .build();
-		apiClient.setHttpClient(okHttpClient);
+		//...code
 	}
-
+	    
 	@Test
-	public void getLAEByFolioConsultaTest() throws ApiException {
-		PeticionFolioConsulta request = new PeticionFolioConsulta();
-		
-		request.setFolioOtorgante("1");
-		request.setSegmento(CatalogoSegmento.PP);
-		request.setFolioConsulta("386636538");
-		
-		Respuesta response = api.getLAEByFolioConsulta(this.xApiKey, this.username, this.password, request);
-		logger.info(response.toString());
+	public void consultarTrayectoriasTest() throws ApiException {
+	    Busqueda busqueda = new Busqueda();
+	    PersonaConsulta persona = new PersonaConsulta();
+	    DomicilioConsulta domicilio = new DomicilioConsulta();
+	    
+	    Integer estatusOK = 200;
+	    Integer estatusNoContent = 204;
+	    
+	    try {
+	        
+	        persona.setPrimerNombre("Juann");
+	        persona.setApellidoPaterno("Pruebauno");
+	        persona.setApellidoMaterno("Pruebauno");
+	        persona.setFechaNacimiento("1986-12-01");
+	        persona.setSexo(CatalogoSexoPersona.M);
+	        
+	        domicilio.setDireccion("TORNO 301 EL ROSARIO");
+	        domicilio.setColonia("PEDREGAL DE SANTO DOMINGO");
+	        domicilio.setCp("02100");
+	        
+	        busqueda.setClaveEmpresaConsulta("2007310044");
+	        busqueda.setFolioConsultaEmpleador("2620100");
+	        busqueda.setProductoRequerido(new BigDecimal(4));
+	        busqueda.setPuestoSolicitado("Vendedor muebles");
+	        busqueda.setPersona(persona);
+	        busqueda.setDomicilio(domicilio);
+	        
+	        ApiResponse<?> response = api.genericConsultarTrayectorias(xApiKey, busqueda);
+	  
+	        Assert.assertTrue(estatusOK.equals(response.getStatusCode()));
+	        
+	        if(estatusOK.equals(response.getStatusCode())) {
+	            Respuesta responseOK = (Respuesta) response.getData();
+	            logger.info(responseOK.toString());
+	        }
+	        
+	    }catch (ApiException e) {
+	        if(!estatusNoContent.equals(e.getCode())) {
+	            logger.info(e.getResponseBody());
+	        }
+	        Assert.assertTrue(estatusOK.equals(e.getCode()));
+	    }
+	
 	}
-
+    
 }
 
 ```
